@@ -1,0 +1,21 @@
+{
+  "baseUrl": "bbc.com",
+  "name": "bbc",
+  "scanUrl": "bbc.com",
+  "staging": "",
+  "urls": [
+    "https://bbc.com",
+    "https://bbc.com/news",
+    "https://bbc.com/sport"
+  ],
+  "schedule": {
+    "days": [],
+    "scheduleTime": "12:30 AM",
+    "scheduleTimeZone": "Europe/London",
+    "type": "daily"
+  },
+  "basicAuth": {
+    "production": { "user": "", "password": "" },
+    "staging": { "user": "", "password": "" }
+  }
+}
