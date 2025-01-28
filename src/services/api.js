@@ -1,7 +1,7 @@
 const axios = require('axios');
 const config = require('../config/config');
 
-let apiToken = null; // Store token in memory
+let apiToken = null;
 
 /**
  * Authenticate and get a Bearer token
