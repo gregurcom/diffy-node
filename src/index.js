@@ -3,6 +3,7 @@ const { sendRequest, authenticate } = require('./services/api');
 const createProject = async (url) => {
     try {
         let scannedUrls = await fetchUrls(url);
+
         const projectData = {
             'baseUrl': url,
             'name': url,
@@ -15,6 +16,26 @@ const createProject = async (url) => {
         console.error('Error posting data:', error.message);
     }
 };
+
+const createSnapshot = async (projectId, environment = 'production') => {
+    return await sendRequest('POST', `/projects/${projectId}/screenshots`, {
+        environment: environment
+    });
+}
+
+// Get last snapshot. Compare this snapshot with the new one after deploy
+const getLastSnapshot = async (projectId) => {
+    return await sendRequest('POST', `/projects/${projectId}/last-screenshot`);
+}
+
+const createDiff = async (projectId, snapshot1, snapshot2) => {
+    const response = await sendRequest('POST', `/projects/${projectId}/diffs`, {
+        snapshot1: snapshot1,
+        snapshot2: snapshot2
+    });
+
+    console.log('API Response:', response);
+}
 
 const fetchUrls = async (url) => {
     try {
@@ -29,24 +50,20 @@ const fetchUrls = async (url) => {
     }
 }
 
-const createSnapshot = async (id) => {
-    return await sendRequest('POST', `/projects/${id}/screenshots`, {
-        environment: 'production'
-    });
-}
+const deploy = async (projectId) => {
+    try {
+        let lastScreenshot = await getLastSnapshot(projectId)
 
-// Get last snapshot. Compare this snapshot with the new one after deploy
-const getLastSnapshot = async (projectId) => {
+        new Promise((resolve) => {
+            setTimeout(resolve, 5000);
+        });
 
-}
+        let snapshot1New = await createSnapshot(projectId);
 
-const createDiff = async (projectId, snapshot1, snapshot2) => {
-    const response = await sendRequest('POST', `/projects/${projectId}/diffs`, {
-        snapshot1: snapshot1,
-        snapshot2: snapshot2
-    });
-
-    console.log('API Response:', response);
+        await createDiff(projectId, lastScreenshot, snapshot1New);
+    } catch (error) {
+        console.error('Error:', error.message);
+    }
 }
 
 async function main() {
