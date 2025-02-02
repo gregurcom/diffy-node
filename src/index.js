@@ -109,22 +109,20 @@ const deploy = async (projectId) => {
         }
 
         // Filter and sort by created date (newest first)
-        const filteredScreenshots = webhookData
+        const lastScreenshot = webhookData
             .filter(obj => obj.project_id === projectId && !("snapshot1" in obj) && !("snapshot2" in obj))
             .sort((a, b) => new Date(b.created) - new Date(a.created));
 
-        if (filteredScreenshots.length === 0) {
+        if (lastScreenshot.length === 0) {
             console.error('No valid screenshots found for deployment.');
             return;
         }
-
-        const lastScreenshot = filteredScreenshots[0];
 
         // Simulate deployment delay
         await new Promise((resolve) => setTimeout(resolve, 5000));
 
         const snapshot1New = await createSnapshot(projectId);
-        await createDiff(projectId, lastScreenshot.id, snapshot1New);
+        await createDiff(projectId, lastScreenshot[0].id, snapshot1New);
 
         console.log(`Deployment completed for project ${projectId}`);
     } catch (error) {
