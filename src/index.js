@@ -1,10 +1,6 @@
 const { sendRequest, authenticate } = require('./services/api');
-require('dotenv').config();
 const fs = require('fs');
 const yaml = require('js-yaml');
-
-const token = process.env.TOKEN;
-const webhookUrl = `https://webhook.site/token/${token}/requests`;
 
 /**
  * Loads YAML configuration from the specified file.
@@ -19,6 +15,10 @@ const loadYamlConfig = (filePath) => {
         throw new Error('Failed to load YAML configuration.');
     }
 };
+
+let config = loadYamlConfig('bbc.yaml')
+let token = new URL(config.notify.psNotifyWebhookUrl).pathname.split('/')[1];
+const webhookApi = `https://webhook.site/token/${token}/requests`;
 
 /**
  * Creates a project using the provided YAML configuration.
@@ -169,7 +169,7 @@ const getLastDiff = async (projectId) => {
  */
 const fetchWebhookData = async () => {
     try {
-        const response = await fetch(webhookUrl, {
+        const response = await fetch(webhookApi, {
             method: "GET",
             headers: { "Accept": "application/json" }
         });
@@ -203,7 +203,7 @@ const fetchWebhookData = async () => {
 
 async function main() {
     await authenticate();
-    // let projectId = await createProject('bbc.yaml', 'point.com');
+    // let projectId = await createProject('bbc.yaml');
     // await createSnapshot(projectId);
 }
 
