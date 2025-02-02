@@ -32,10 +32,10 @@ const createProject = async (yamlFilePath, url) => {
         const config = loadYamlConfig(yamlFilePath);
 
         const projectData = {
-            baseUrl: config.basic.environments.production || 'defaultBaseUrl',
-            name: config.basic.name || 'defaultName',
-            scanUrl: config.basic.environments.production || 'defaultScanUrl',
-            urls: scannedUrls.urls || [],
+            baseUrl: config.basic.environments.production,
+            name: config.basic.name,
+            scanUrl: config.basic.environments.production,
+            urls: scannedUrls.urls,
             notify: {
                 psNotifyWebhookUrl: config.notify.psNotifyWebhookUrl || null
             }
@@ -101,28 +101,14 @@ const fetchUrls = async (url) => {
  */
 const deploy = async (projectId) => {
     try {
-        const webhookData = await fetchWebhookData();
-
-        if (!webhookData || webhookData.length === 0) {
-            console.error('No webhook data found.');
-            return;
-        }
-
-        // Filter and sort by created date (newest first)
-        const lastScreenshot = webhookData
-            .filter(obj => obj.project_id === projectId && !("snapshot1" in obj) && !("snapshot2" in obj))
-            .sort((a, b) => new Date(b.created) - new Date(a.created));
-
-        if (lastScreenshot.length === 0) {
-            console.error('No valid screenshots found for deployment.');
-            return;
-        }
+        let lastScreenshot = await getLastScreenshot(projectId)
 
         // Simulate deployment delay
         await new Promise((resolve) => setTimeout(resolve, 5000));
 
-        const snapshot1New = await createSnapshot(projectId);
-        await createDiff(projectId, lastScreenshot[0].id, snapshot1New);
+        const freshSnapshotId = await createSnapshot(projectId);
+
+        await createDiff(projectId, lastScreenshot.id, freshSnapshotId);
 
         console.log(`Deployment completed for project ${projectId}`);
     } catch (error) {
@@ -130,12 +116,33 @@ const deploy = async (projectId) => {
     }
 };
 
+const getLastScreenshot = async (projectId) => {
+    const webhookData = await fetchWebhookData();
+
+    if (!webhookData || webhookData.length === 0) {
+        console.error('No webhook data found.');
+        return;
+    }
+
+    // Filter and sort by created date (newest first)
+    const lastScreenshot = webhookData
+        .filter(obj => obj.project_id === projectId && !("snapshot1" in obj) && !("snapshot2" in obj))
+        .sort((a, b) => new Date(b.created) - new Date(a.created));
+
+    if (lastScreenshot.length === 0) {
+        console.error('No valid screenshots found for deployment.');
+        return;
+    }
+
+    return lastScreenshot[0];
+}
+
 /**
  * Fetches webhook data and filters the latest valid diff for review.
  * @param {number} projectId - The project ID.
  * @returns {Promise<void>}
  */
-const getLatestDiff = async (projectId) => {
+const getLastDiff = async (projectId) => {
     const webhookData = await fetchWebhookData();
 
     if (!webhookData || webhookData.length === 0) {
@@ -196,11 +203,8 @@ const fetchWebhookData = async () => {
 
 async function main() {
     await authenticate();
-    // await deploy(378);
     // let projectId = await createProject('bbc.yaml', 'point.com');
-    // console.log(projectId)
     // await createSnapshot(projectId);
-    // await getLatestDiff(378);
 }
 
 main();
