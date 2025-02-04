@@ -23,3 +23,9 @@ npm install
 `cp .env-example .env`
 
 Adjust .env with your api key (https://app.diffy.website/#/keys)
+
+## Launch
+Need to pass url argument:
+```bash
+node index.js --url="https://example.com"
+```

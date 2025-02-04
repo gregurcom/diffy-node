@@ -1,43 +1,28 @@
 const { sendRequest, authenticate } = require('./services/api');
-const fs = require('fs');
-const yaml = require('js-yaml');
 
-/**
- * Loads YAML configuration from the specified file.
- * @param {string} filePath - Path to the YAML file.
- * @returns {object} Parsed YAML configuration.
- */
-const loadYamlConfig = (filePath) => {
-    try {
-        const fileContents = fs.readFileSync(filePath, 'utf8');
-        return yaml.load(fileContents);
-    } catch (error) {
-        throw new Error('Failed to load YAML configuration.');
-    }
-};
+const urlArg = process.argv.find(arg => arg.startsWith('--url='));
+let url = urlArg.split('=')[1];
+url = url.replace(/^['"]|['"]$/g, '');
 
-let config = loadYamlConfig('bbc.yaml')
-let token = new URL(config.notify.psNotifyWebhookUrl).pathname.split('/')[1];
-const webhookApi = `https://webhook.site/token/${token}/requests`;
+const WEBHOOK_TOKEN = process.env.WEBHOOK_TOKEN;
+const WEBHOOK_API = `https://webhook.site/token/${WEBHOOK_TOKEN}/requests`;
 
 /**
  * Creates a project using the provided YAML configuration.
- * @param {string} yamlFilePath - Path to the YAML file.
  * @param {string} url - Base URL for scanning.
  * @returns {Promise<number>} The project ID.
  */
-const createProject = async (yamlFilePath, url) => {
+const createProject = async (url) => {
     try {
         const scannedUrls = await fetchUrls(url);
-        const config = loadYamlConfig(yamlFilePath);
 
         const projectData = {
-            baseUrl: config.basic.environments.production,
-            name: config.basic.name,
-            scanUrl: config.basic.environments.production,
+            baseUrl: url,
+            name: url,
+            scanUrl: url,
             urls: scannedUrls.urls,
             notify: {
-                psNotifyWebhookUrl: config.notify.psNotifyWebhookUrl || null
+                psNotifyWebhookUrl: WEBHOOK_API || null
             }
         };
 
@@ -126,7 +111,7 @@ const getLastScreenshot = async (projectId) => {
 
     // Filter and sort by created date (newest first)
     const lastScreenshot = webhookData
-        .filter(obj => obj.project_id === projectId && !("snapshot1" in obj) && !("snapshot2" in obj))
+        .filter(obj => obj.project_id === projectId && obj.type === 'snapshot')
         .sort((a, b) => new Date(b.created) - new Date(a.created));
 
     if (lastScreenshot.length === 0) {
@@ -152,7 +137,7 @@ const getLastDiff = async (projectId) => {
 
     // Filter and sort by created date (newest first)
     const filtereDiffs = webhookData
-        .filter(obj => obj.project_id === projectId && ("snapshot1" in obj) && ("snapshot2" in obj))
+        .filter(obj => obj.project_id === projectId && obj.type === 'diff')
         .sort((a, b) => new Date(b.created) - new Date(a.created));
 
     if (filtereDiffs.length === 0) {
@@ -169,7 +154,7 @@ const getLastDiff = async (projectId) => {
  */
 const fetchWebhookData = async () => {
     try {
-        const response = await fetch(webhookApi, {
+        const response = await fetch(WEBHOOK_API, {
             method: "GET",
             headers: { "Accept": "application/json" }
         });
@@ -200,11 +185,10 @@ const fetchWebhookData = async () => {
     }
 };
 
-
 async function main() {
-    await authenticate();
-    // let projectId = await createProject('bbc.yaml');
-    // await createSnapshot(projectId);
+    // await authenticate();
+    // let projectId = await createProject(url);
+    // console.log(projectId)
 }
 
 main();
