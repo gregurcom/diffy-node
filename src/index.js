@@ -6,6 +6,7 @@ url = url.replace(/^['"]|['"]$/g, '');
 
 const WEBHOOK_TOKEN = process.env.WEBHOOK_TOKEN;
 const WEBHOOK_API = `https://webhook.site/token/${WEBHOOK_TOKEN}/requests`;
+const WEBHOOK_URL = `https://webhook.site/${WEBHOOK_TOKEN}`;
 
 /**
  * Creates a project using the provided YAML configuration.
@@ -22,7 +23,7 @@ const createProject = async (url) => {
             scanUrl: url,
             urls: scannedUrls.urls,
             notify: {
-                psNotifyWebhookUrl: WEBHOOK_API || null
+                psNotifyWebhookUrl: WEBHOOK_URL || null
             }
         };
 
@@ -186,9 +187,9 @@ const fetchWebhookData = async () => {
 };
 
 async function main() {
-    // await authenticate();
-    // let projectId = await createProject(url);
-    // console.log(projectId)
+    await authenticate();
+    let projectId = await createProject(url);
+    console.log(projectId)
 }
 
 main();
